@@ -45,12 +45,11 @@
 
 Summary: Lightning fast webserver with light system requirements
 Name: lighttpd
-Version: 1.4.51
+Version: 1.4.82
 Release: 1%{?dist}
 License: BSD
-Group: System Environment/Daemons
 URL: http://www.lighttpd.net/
-Source0: http://download.lighttpd.net/lighttpd/releases-1.4.x/lighttpd-%{version}.tar.gz
+Source0: https://download.lighttpd.net/lighttpd/releases-1.4.x/%{name}-%{version}.tar.xz
 Source1: lighttpd.logrotate
 Source2: php.d-lighttpd.ini
 Source3: lighttpd.init
@@ -60,6 +59,7 @@ Source11: http://www.lighttpd.net/favicon.ico
 Source12: http://www.lighttpd.net/light_button.png
 Source13: http://www.lighttpd.net/light_logo.png
 Source14: lighttpd-empty.png
+Source15: default-web-pages.tar.gz
 #Source100: lighttpd-mod_geoip.c
 #Source101: lighttpd-mod_geoip.txt
 Patch0: lighttpd-1.4.39-defaultconf.patch
@@ -72,7 +72,6 @@ Patch3: lighttpd-1.4.39-socket.patch
 #Patch7: lighttpd-1.4.42-bignum.patch
 #Patch8: lighttpd-1.4.43-mysql.patch
 #Patch9:  lighttpd-1.4.48-autoconf.patch
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 # For the target poweredby.png image (skip requirement + provide image on EL5)
 %if %{with systemlogos}
 Requires: system-logos >= 7.92.1
@@ -89,19 +88,21 @@ Requires(preun): /sbin/service, /sbin/chkconfig
 Requires(postun): /sbin/service
 %endif
 Provides: webserver
-BuildRequires: openssl-devel, pcre-devel, bzip2-devel, zlib-devel, autoconf, automake, libtool
+Obsoletes: lighttpd < %{version}-%{release}
+BuildRequires: openssl-devel, bzip2-devel, zlib-devel, autoconf, automake, libtool
+%if 0%{?rhel} >= 8 || 0%{?fedora}
+BuildRequires: pcre2-devel
+%else
+BuildRequires: pcre-devel
+%endif
 BuildRequires: /usr/bin/awk, libattr-devel
 %{?with_ldap:BuildRequires: openldap-devel}
-%{?with_fam:BuildRequires: gamin-devel}
+%{?with_fam:BuildRequires: libevent-devel}
 %{?with_webdavprops:BuildRequires: libxml2-devel}
 %{?with_webdavlocks:BuildRequires: sqlite-devel}
 %{?with_gdbm:BuildRequires: gdbm-devel}
-%{?with_memcache:BuildRequires: memcached-devel}
+%{?with_memcache:BuildRequires: libmemcached-devel}
 %{?with_lua:BuildRequires: lua-devel}
-# On EL5 we still need this because of the "broken" lua
-%if 0%{?el5}
-BuildRequires: readline-devel
-%endif
 Requires: psmisc
 
 %description
@@ -115,10 +116,10 @@ problems.
 
 %package fastcgi
 Summary: FastCGI module and spawning helper for lighttpd and PHP configuration
-Group: System Environment/Daemons
 Requires: %{name} = %{version}-%{release}
 # Not really a requirement, but it used to be included (until 1.4.20-5)
 Requires: spawn-fcgi
+Obsoletes: lighttpd-fastcgi < %{version}-%{release}
 
 %description fastcgi
 This package contains the spawn-fcgi helper for lighttpd's automatic spawning
@@ -128,9 +129,9 @@ defaults needed for correct FastCGI behavior.
 
 %package mod_geoip
 Summary: GeoIP module for lighttpd to use for location lookups
-Group: System Environment/Daemons
 Requires: %{name} = %{version}-%{release}
-BuildRequires: GeoIP-devel
+BuildRequires: libmaxminddb-devel
+Obsoletes: lighttpd-mod_geoip < %{version}-%{release}
 
 %description mod_geoip
 GeoIP module for lighttpd to use for location lookups.
@@ -138,26 +139,26 @@ GeoIP module for lighttpd to use for location lookups.
 
 %package mod_mysql_vhost
 Summary: Virtual host module for lighttpd that uses a MySQL database
-Group: System Environment/Daemons
 Requires: %{name} = %{version}-%{release}
-BuildRequires: mysql-devel
+BuildRequires: mariadb-connector-c-devel
+Obsoletes: lighttpd-mod_mysql_vhost < %{version}-%{release}
 
 %description mod_mysql_vhost
 Virtual host module for lighttpd that uses a MySQL database.
 
 %package mod_authn_mysql
 Summary: Authentication module for lighttpd that uses a MySQL database
-Group: System Environment/Daemons
 Requires: %{name} = %{version}-%{release}
-BuildRequires: mysql-devel
+BuildRequires: mariadb-connector-c-devel
+Obsoletes: lighttpd-mod_authn_mysql < %{version}-%{release}
 
 %description mod_authn_mysql
 Authentication module for lighttpd that uses a MySQL database.
 
 %package mod_authn_gssapi
 Summary: Authentication module for lighttpd that uses GSSAPI
-Group: System Environment/Daemons
 Requires: %{name} = %{version}-%{release}
+Obsoletes: lighttpd-mod_authn_gssapi < %{version}-%{release}
 
 %description mod_authn_gssapi
 Authentication module for lighttpd that uses GSSAPI
@@ -166,6 +167,7 @@ Authentication module for lighttpd that uses GSSAPI
 Summary: Authentication module for lighttpd that uses PAM
 Requires: %{name} = %{version}-%{release}
 BuildRequires: pam-devel
+Obsoletes: lighttpd-mod_authn_pam < %{version}-%{release}
 
 %description mod_authn_pam
 Authentication module for lighttpd that uses PAM.
@@ -211,7 +213,6 @@ make %{?_smp_mflags}
 
 
 %install
-rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
 
 # Install our own logrotate entry
@@ -235,6 +236,9 @@ install -D -p -m 0755 %{SOURCE3} \
 mkdir -p %{buildroot}%{webroot}
 install -p -m 0644 %{SOURCE10} %{SOURCE11} %{SOURCE12} %{SOURCE13} \
     %{buildroot}%{webroot}/
+
+# Install default web pages (overrides bundled index.html with modern pages)
+tar xzf %{SOURCE15} -C %{buildroot}%{webroot}/
 
 # Symlink for the powered-by-$DISTRO image (install empty image on EL5)
 %if %{with systemlogos}
@@ -266,10 +270,6 @@ mkdir -p %{buildroot}%{_sysconfdir}/tmpfiles.d
 echo 'D /var/run/lighttpd 0750 lighttpd lighttpd -' > \
     %{buildroot}%{_sysconfdir}/tmpfiles.d/lighttpd.conf
 %endif
-
-
-%clean
-rm -rf %{buildroot}
 
 
 %pre
@@ -304,7 +304,6 @@ fi
 
 
 %files
-%defattr(-,root,root,-)
 %doc AUTHORS COPYING README
 %doc config/ doc/scripts/rrdtool-graph.sh
 %dir %{_sysconfdir}/lighttpd/
@@ -344,33 +343,30 @@ fi
 %{webroot}/*.png
 # This is not really configuration, but prevent loss of local changes
 %config %{webroot}/index.html
+%{webroot}/4*.html
+%{webroot}/5*.html
 
 %files fastcgi
-%defattr(-,root,root,-)
 %doc doc/outdated/fastcgi*.txt doc/scripts/spawn-php.sh
 %config(noreplace) %{_sysconfdir}/php.d/lighttpd.ini
 %dir %{_libdir}/lighttpd/
 %{_libdir}/lighttpd/mod_fastcgi.so
 
 %files mod_geoip
-%defattr(-,root,root,-)
 #%doc mod_geoip.txt
 %dir %{_libdir}/lighttpd/
 %{_libdir}/lighttpd/mod_geoip.so
 
 %files mod_mysql_vhost
-%defattr(-,root,root,-)
 %doc doc/outdated/mysqlvhost.txt
 %dir %{_libdir}/lighttpd/
 %{_libdir}/lighttpd/mod_mysql_vhost.so
 
 %files mod_authn_mysql
-%defattr(-,root,root,-)
 %dir %{_libdir}/lighttpd/
 %{_libdir}/lighttpd/mod_authn_mysql.so
 
 %files mod_authn_gssapi
-%defattr(-,root,root,-)
 %dir %{_libdir}/lighttpd/
 %{_libdir}/lighttpd/mod_authn_gssapi.so
 
@@ -379,6 +375,10 @@ fi
 %{_libdir}/lighttpd/mod_authn_pam.so
 
 %changelog
+* Fri Apr 24 2026 CasjaysDev <rpm-devel@casjaysdev.pro> - 1.4.82-1
+- Update to 1.4.82
+- Modernize spec for EL10
+
 * Mon Oct 15 2018 Gwyn Ciesla <limburgher@gmail.com> - 1.4.51-1
 - 1.4.51.
 
