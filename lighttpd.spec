@@ -1,4 +1,4 @@
-%define webroot /var/www/lighttpd
+%global webroot /var/www/lighttpd
 
 %global _hardened_build 1
 
@@ -375,6 +375,9 @@ fi
 %{_libdir}/lighttpd/mod_authn_pam.so
 
 %changelog
+* Fri May 22 2026 CasjaysDev <rpm-devel@casjaysdev.pro> - 1.4.82-1
+- Fix spec violations: %global for constants, use %{buildroot}
+
 * Fri Apr 24 2026 CasjaysDev <rpm-devel@casjaysdev.pro> - 1.4.82-1
 - Update to 1.4.82
 - Modernize spec for EL10
