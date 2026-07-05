@@ -45,19 +45,20 @@
 
 Summary: Lightning fast webserver with light system requirements
 Name: lighttpd
-Version: 1.4.82
+Version: 1.4.84
 Release: 1%{?dist}
-License: BSD
-URL: http://www.lighttpd.net/
+License: BSD-3-Clause
+URL: https://www.lighttpd.net/
+ExclusiveArch: x86_64 aarch64
 Source0: https://download.lighttpd.net/lighttpd/releases-1.4.x/%{name}-%{version}.tar.xz
 Source1: lighttpd.logrotate
 Source2: php.d-lighttpd.ini
 Source3: lighttpd.init
 Source4: lighttpd.service
 Source10: index.html
-Source11: http://www.lighttpd.net/favicon.ico
-Source12: http://www.lighttpd.net/light_button.png
-Source13: http://www.lighttpd.net/light_logo.png
+Source11: https://www.lighttpd.net/favicon.ico
+Source12: https://www.lighttpd.net/light_button.png
+Source13: https://www.lighttpd.net/light_logo.png
 Source14: lighttpd-empty.png
 Source15: default-web-pages.tar.gz
 #Source100: lighttpd-mod_geoip.c
@@ -76,12 +77,10 @@ Patch3: lighttpd-1.4.39-socket.patch
 %if %{with systemlogos}
 Requires: system-logos >= 7.92.1
 %endif
-Requires(pre): /usr/sbin/useradd
+Requires(pre): shadow-utils
 %if %{with systemd}
-Requires(post): systemd
-Requires(preun): systemd
-Requires(postun): systemd
-BuildRequires: systemd
+BuildRequires: systemd-rpm-macros
+%{?systemd_requires}
 %else
 Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/service, /sbin/chkconfig
@@ -209,11 +208,11 @@ autoreconf -if
     %{confswitch lua} \
     %{confswitch geoip} \
     %{confswitch krb5}
-make %{?_smp_mflags}
+%make_build
 
 
 %install
-make install DESTDIR=%{buildroot}
+%make_install
 
 # Install our own logrotate entry
 install -D -p -m 0644 %{SOURCE1} \
@@ -304,7 +303,8 @@ fi
 
 
 %files
-%doc AUTHORS COPYING README
+%license COPYING
+%doc AUTHORS README
 %doc config/ doc/scripts/rrdtool-graph.sh
 %dir %{_sysconfdir}/lighttpd/
 %dir %{_sysconfdir}/lighttpd/conf.d/
@@ -375,6 +375,13 @@ fi
 %{_libdir}/lighttpd/mod_authn_pam.so
 
 %changelog
+* Sat Jul 04 2026 CasjaysDev <rpm-devel@casjaysdev.pro> - 1.4.84-1
+- Version: 1.4.82 → 1.4.84 (latest; verified HTTP 200)
+- URL: http→https; Source11/12/13: http→https (all verified HTTP 200)
+- SPDX: BSD → BSD-3-Clause; add ExclusiveArch: x86_64 aarch64
+- Requires(pre): shadow-utils; systemd-rpm-macros + %%{?systemd_requires}
+- %%make_build, %%make_install, %%license COPYING
+
 * Fri May 22 2026 CasjaysDev <rpm-devel@casjaysdev.pro> - 1.4.82-1
 - Fix spec violations: %global for constants, use %{buildroot}
 
