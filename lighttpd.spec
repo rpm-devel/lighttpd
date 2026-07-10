@@ -43,6 +43,21 @@
 %bcond_with    systemd
 %endif
 
+# openSUSE/SLES use different package names for some of these deps
+%if 0%{?suse_version}
+%global shadow_pkg      shadow
+%global openssl_pkg     libopenssl-devel
+%global openldap_pkg    openldap2-devel
+%global sqlite_pkg      sqlite3-devel
+%global mariadbcc_pkg   libmariadb-devel
+%else
+%global shadow_pkg      shadow-utils
+%global openssl_pkg     openssl-devel
+%global openldap_pkg    openldap-devel
+%global sqlite_pkg      sqlite-devel
+%global mariadbcc_pkg   mariadb-connector-c-devel
+%endif
+
 Summary: Lightning fast webserver with light system requirements
 Name: lighttpd
 Version: 1.4.84
@@ -77,7 +92,7 @@ Patch3: lighttpd-1.4.39-socket.patch
 %if %{with systemlogos}
 Requires: system-logos >= 7.92.1
 %endif
-Requires(pre): shadow-utils
+Requires(pre): %{shadow_pkg}
 %if %{with systemd}
 BuildRequires: systemd-rpm-macros
 %{?systemd_requires}
@@ -88,17 +103,17 @@ Requires(postun): /sbin/service
 %endif
 Provides: webserver
 Obsoletes: lighttpd < %{version}-%{release}
-BuildRequires: openssl-devel, bzip2-devel, zlib-devel, autoconf, automake, libtool
+BuildRequires: %{openssl_pkg}, bzip2-devel, zlib-devel, autoconf, automake, libtool
 %if 0%{?rhel} >= 8 || 0%{?fedora}
 BuildRequires: pcre2-devel
 %else
 BuildRequires: pcre-devel
 %endif
 BuildRequires: /usr/bin/awk, libattr-devel
-%{?with_ldap:BuildRequires: openldap-devel}
+%{?with_ldap:BuildRequires: %{openldap_pkg}}
 %{?with_fam:BuildRequires: libevent-devel}
 %{?with_webdavprops:BuildRequires: libxml2-devel}
-%{?with_webdavlocks:BuildRequires: sqlite-devel}
+%{?with_webdavlocks:BuildRequires: %{sqlite_pkg}}
 %{?with_gdbm:BuildRequires: gdbm-devel}
 %{?with_memcache:BuildRequires: libmemcached-devel}
 %{?with_lua:BuildRequires: lua-devel}
@@ -139,7 +154,7 @@ GeoIP module for lighttpd to use for location lookups.
 %package mod_mysql_vhost
 Summary: Virtual host module for lighttpd that uses a MySQL database
 Requires: %{name} = %{version}-%{release}
-BuildRequires: mariadb-connector-c-devel
+BuildRequires: %{mariadbcc_pkg}
 Obsoletes: lighttpd-mod_mysql_vhost < %{version}-%{release}
 
 %description mod_mysql_vhost
@@ -148,7 +163,7 @@ Virtual host module for lighttpd that uses a MySQL database.
 %package mod_authn_mysql
 Summary: Authentication module for lighttpd that uses a MySQL database
 Requires: %{name} = %{version}-%{release}
-BuildRequires: mariadb-connector-c-devel
+BuildRequires: %{mariadbcc_pkg}
 Obsoletes: lighttpd-mod_authn_mysql < %{version}-%{release}
 
 %description mod_authn_mysql
@@ -375,6 +390,16 @@ fi
 %{_libdir}/lighttpd/mod_authn_pam.so
 
 %changelog
+* Sat Jul 05 2026 CasjaysDev <rpm-devel@casjaysdev.pro> - 1.4.84-1
+- Multi-distro: guard openSUSE/SLES package names via %%{?suse_version}
+  for shadow-utils/shadow, openssl-devel/libopenssl-devel,
+  sqlite-devel/sqlite3-devel, openldap-devel/openldap2-devel,
+  mariadb-connector-c-devel/libmariadb-devel
+- No noarch issue (already ExclusiveArch: x86_64 aarch64); other deps
+  (bzip2/zlib/pcre/pcre2/libattr/libevent/libxml2/gdbm/libmemcached/
+  lua/psmisc/spawn-fcgi/libmaxminddb/pam/systemd-rpm-macros) verified
+  identical across RHEL/Fedora/SUSE, left unguarded
+
 * Sat Jul 04 2026 CasjaysDev <rpm-devel@casjaysdev.pro> - 1.4.84-1
 - Version: 1.4.82 → 1.4.84 (latest; verified HTTP 200)
 - URL: http→https; Source11/12/13: http→https (all verified HTTP 200)
