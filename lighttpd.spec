@@ -130,7 +130,7 @@ problems.
 
 %package fastcgi
 Summary: FastCGI module and spawning helper for lighttpd and PHP configuration
-Requires: %{name} = %{version}-%{release}
+Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
 # Not really a requirement, but it used to be included (until 1.4.20-5)
 Requires: spawn-fcgi
 Obsoletes: lighttpd-fastcgi < %{version}-%{release}
@@ -143,7 +143,7 @@ defaults needed for correct FastCGI behavior.
 
 %package mod_geoip
 Summary: GeoIP module for lighttpd to use for location lookups
-Requires: %{name} = %{version}-%{release}
+Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
 BuildRequires: libmaxminddb-devel
 Obsoletes: lighttpd-mod_geoip < %{version}-%{release}
 
@@ -153,7 +153,7 @@ GeoIP module for lighttpd to use for location lookups.
 
 %package mod_mysql_vhost
 Summary: Virtual host module for lighttpd that uses a MySQL database
-Requires: %{name} = %{version}-%{release}
+Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
 BuildRequires: %{mariadbcc_pkg}
 Obsoletes: lighttpd-mod_mysql_vhost < %{version}-%{release}
 
@@ -162,7 +162,7 @@ Virtual host module for lighttpd that uses a MySQL database.
 
 %package mod_authn_mysql
 Summary: Authentication module for lighttpd that uses a MySQL database
-Requires: %{name} = %{version}-%{release}
+Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
 BuildRequires: %{mariadbcc_pkg}
 Obsoletes: lighttpd-mod_authn_mysql < %{version}-%{release}
 
@@ -171,7 +171,7 @@ Authentication module for lighttpd that uses a MySQL database.
 
 %package mod_authn_gssapi
 Summary: Authentication module for lighttpd that uses GSSAPI
-Requires: %{name} = %{version}-%{release}
+Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
 Obsoletes: lighttpd-mod_authn_gssapi < %{version}-%{release}
 
 %description mod_authn_gssapi
@@ -179,7 +179,7 @@ Authentication module for lighttpd that uses GSSAPI
 
 %package mod_authn_pam
 Summary: Authentication module for lighttpd that uses PAM
-Requires: %{name} = %{version}-%{release}
+Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
 BuildRequires: pam-devel
 Obsoletes: lighttpd-mod_authn_pam < %{version}-%{release}
 
@@ -189,10 +189,10 @@ Authentication module for lighttpd that uses PAM.
 
 %prep
 %setup -q
-%patch0 -p0 -b .defaultconf
+%patch -P0 -p0 -b .defaultconf
 #%patch1 -p0 -b .mod_geoip
-%patch2 -p1 -b .crypto_policy
-%patch3 -p0 -b .socket
+%patch -P2 -p1 -b .crypto_policy
+%patch -P3 -p0 -b .socket
 #%patch4 -p1 -b .ipv6block
 #%patch5 -p1 -b .conn_state
 #%patch6 -p1 -b .http_proxy
